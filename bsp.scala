@@ -30,9 +30,16 @@ class Display(width: Int, height: Int) {
 // x x
 // xxx
 //
+//
+// We can also intentionally make this larger, to avoid tiny rooms
+object Rectangle {
+  val MIN_ROOM_SIZE = 7
+}
+import Rectangle.MIN_ROOM_SIZE
+
 case class Rectangle(xStart: Int, xEnd: Int, yStart: Int, yEnd: Int) {
-  assert(xStart + 3 <= xEnd)
-  assert(yStart + 3 <= yEnd)
+  assert(xStart + MIN_ROOM_SIZE <= xEnd)
+  assert(yStart + MIN_ROOM_SIZE <= yEnd)
 
   def writeTo(display: Display): Unit = {
     // write four lines:
@@ -50,21 +57,25 @@ case class Rectangle(xStart: Int, xEnd: Int, yStart: Int, yEnd: Int) {
     })
   }
 
+  def randomizedRange(starting: Int, ending: Int): Iterator[Int] = {
+    scala.util.Random.shuffle(starting.to(ending).toSeq).iterator
+  }
+
   // gives back a rectangle that is either this one, or contained within
   // this one
   def subrec: Iterator[Rectangle] = {
     // need newXStart, newXEnd, newYStart, and newYEnd, such that:
     // xStart <= newXStart <= newXEnd <= xEnd,
-    // newXStart + 3 <= newXEnd,
+    // newXStart + MIN_ROOM_SIZE <= newXEnd,
     // yStart <= newYStart <= newYEnd <= yEnd,
-    // newYStart + 3 <= newYEnd
+    // newYStart + MIN_ROOM_SIZE <= newYEnd
     for {
-      newXStart <- xStart.to(xEnd).iterator
-      newXEnd <- newXStart.to(xEnd).iterator
-      if newXStart + 3 <= newXEnd
-      newYStart <- yStart.to(yEnd).iterator
-      newYEnd <- newYStart.to(yEnd).iterator
-      if newYStart + 3 <= newYEnd
+      newXStart <- randomizedRange(xStart, xEnd)
+      newXEnd <- randomizedRange(newXStart, xEnd)
+      if newXStart + MIN_ROOM_SIZE <= newXEnd
+      newYStart <- randomizedRange(yStart, yEnd)
+      newYEnd <- randomizedRange(newYStart, yEnd)
+      if newYStart + MIN_ROOM_SIZE <= newYEnd
     } yield Rectangle(newXStart, newXEnd, newYStart, newYEnd)
   }
 
@@ -73,20 +84,20 @@ case class Rectangle(xStart: Int, xEnd: Int, yStart: Int, yEnd: Int) {
   // meaning they will both retain the same height
   def splitX: Iterator[(Rectangle, Rectangle)] = {
     for {
-      splitPoint <- xStart.to(xEnd).iterator
+      splitPoint <- randomizedRange(xStart, xEnd)
       leftXEnd = splitPoint
       rightXStart = splitPoint + 1
-      if xStart + 3 <= leftXEnd && rightXStart + 3 <= xEnd
+      if xStart + MIN_ROOM_SIZE <= leftXEnd && rightXStart + MIN_ROOM_SIZE <= xEnd
     } yield (Rectangle(xStart, leftXEnd, yStart, yEnd),
              Rectangle(rightXStart, xEnd, yStart, yEnd))
   }
 
   def splitY: Iterator[(Rectangle, Rectangle)] = {
     for {
-      splitPoint <- yStart.to(yEnd).iterator
+      splitPoint <- randomizedRange(yStart, yEnd)
       bottomYEnd = splitPoint
       topYStart = splitPoint + 1
-      if yStart + 3 <= bottomYEnd && topYStart + 3 <= yEnd
+      if yStart + MIN_ROOM_SIZE <= bottomYEnd && topYStart + MIN_ROOM_SIZE <= yEnd
     } yield (Rectangle(xStart, xEnd, yStart, bottomYEnd),
              Rectangle(xStart, xEnd, topYStart, yEnd))
   }
