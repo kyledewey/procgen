@@ -1,3 +1,29 @@
+object IteratorHelpers {
+  def randomOr[A](firstProb: Double, it1: Iterator[A], it2: Iterator[A]): Iterator[A] = {
+    if (math.random < firstProb) {
+      it1 ++ it2
+    } else {
+      it2 ++ it1
+    }
+  }
+
+  // gets the first solution from the given call-by-name iterator indefinitely
+  // loops infinitely if the given iterator will never produce solutions
+  def repeat[A](it: => Iterator[A]): Iterator[A] = {
+    new Iterator[A] {
+      def hasNext: Boolean = true
+      def next: A = {
+        var curIt: Iterator[A] = it
+        while (!curIt.hasNext) {
+          curIt = it
+        }
+        curIt.next
+      }
+    }
+  }
+}
+import IteratorHelpers._
+
 class Display(width: Int, height: Int) {
   private val arr: Array[Array[Char]] = Array.ofDim(width, height)
   clear()
@@ -103,7 +129,7 @@ case class Rectangle(xStart: Int, xEnd: Int, yStart: Int, yEnd: Int) {
   }
 
   def split: Iterator[(Rectangle, Rectangle)] = {
-    splitX ++ splitY
+    randomOr(0.5, splitX, splitY)
   }
 }
 
@@ -118,15 +144,6 @@ object BSP {
   // Nondeterministic choices:
   // 1.) Build a room in this space which fits in this space
   // 2.) split the space, and recursively apply
-
-  def randomOr[A](firstProb: Double, it1: Iterator[A], it2: Iterator[A]): Iterator[A] = {
-    if (math.random < firstProb) {
-      it1 ++ it2
-    } else {
-      it2 ++ it1
-    }
-  }
-
   def partition(space: Rectangle): Iterator[Set[Rectangle]] = {
     val buildRoom = space.subrec.map(rec => Set(rec))
     val recursivePartition = for {
@@ -135,19 +152,6 @@ object BSP {
       secondRooms <- partition(second)
     } yield firstRooms ++ secondRooms
     randomOr(0.9, recursivePartition, buildRoom)
-  }
-
-  def repeat[A](it: => Iterator[A]): Iterator[A] = {
-    new Iterator[A] {
-      def hasNext: Boolean = true
-      def next: A = {
-        var curIt: Iterator[A] = it
-        while (!curIt.hasNext) {
-          curIt = it
-        }
-        curIt.next
-      }
-    }
   }
 
   def main(args: Array[String]): Unit = {
