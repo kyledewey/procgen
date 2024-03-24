@@ -24,13 +24,13 @@ object IteratorHelpers {
 }
 import IteratorHelpers._
 
-class Display(width: Int, height: Int) {
+class Display(val width: Int, val height: Int) {
   private val arr: Array[Array[Char]] = Array.ofDim(width, height)
   clear()
 
   def clear(): Unit = {
-    0.until(arr.length).foreach(row =>
-      0.until(arr(row).length).foreach(col =>
+    0.until(width).foreach(row =>
+      0.until(height).foreach(col =>
         write(row, col, ' ')))
   }
 
@@ -38,9 +38,43 @@ class Display(width: Int, height: Int) {
     arr(row)(col) = what
   }
 
+  def joinRoomsHorizontal(): Unit = {
+    // any instance of _xx_ can be replaced with ____
+
+    0.until(height).foreach(row =>
+      0.until(width - 3).foreach(col => {
+        if (arr(col)(row) == '_' &&
+          arr(col + 1)(row) == 'x' &&
+          arr(col + 2)(row) == 'x' &&
+          arr(col + 3)(row) == '_') {
+          write(col + 1, row, '_')
+          write(col + 2, row, '_')
+        }
+      }))
+  }
+
+  def joinRoomsVertical(): Unit = {
+    0.until(height - 3).foreach(row =>
+      0.until(width).foreach(col => {
+        if (arr(col)(row) == '_' &&
+          arr(col)(row + 1) == 'x' &&
+          arr(col)(row + 2) == 'x' &&
+          arr(col)(row + 3) == '_') {
+          write(col, row + 1, '_')
+          write(col, row + 2, '_')
+        }
+      }))
+  }
+
+  def joinRooms(): Unit = {
+    joinRoomsHorizontal()
+    joinRoomsVertical()
+  }
+
   def print(): Unit = {
-    0.until(arr.length).foreach(row => {
-      0.until(arr(row).length).foreach(col => {
+    joinRooms()
+    0.until(width).foreach(row => {
+      0.until(height).foreach(col => {
         Console.print(arr(row)(col))
       })
       println()
@@ -68,7 +102,7 @@ case class Rectangle(xStart: Int, xEnd: Int, yStart: Int, yEnd: Int) {
   assert(yStart + MIN_ROOM_SIZE <= yEnd)
 
   def writeTo(display: Display): Unit = {
-    // write four lines:
+    // write four lines for the walls:
     // xStart to xEnd, at yStart
     // xStart to xEnd, at yEnd
     // yStart to yEnd, at xStart
@@ -81,6 +115,11 @@ case class Rectangle(xStart: Int, xEnd: Int, yStart: Int, yEnd: Int) {
       display.write(xStart, y, 'x')
       display.write(xEnd, y, 'x')
     })
+
+    // now write the traversable space inside
+    (xStart + 1).until(xEnd).foreach(x =>
+      (yStart + 1).until(yEnd).foreach(y =>
+        display.write(x, y, '_')))
   }
 
   def randomizedRange(starting: Int, ending: Int): Iterator[Int] = {
